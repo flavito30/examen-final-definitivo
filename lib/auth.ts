@@ -39,6 +39,7 @@ export const authOptions: NextAuthConfig = {
           id: user.id,
           email: user.email,
           rol: user.rol,
+          mustChangePassword: user.mustChangePassword,
           egresado: user.egresado
         }
       }
@@ -49,6 +50,7 @@ export const authOptions: NextAuthConfig = {
       if (user) {
         token.rol = user.rol
         token.egresadoId = user.egresado?.id
+        token.mustChangePassword = user.mustChangePassword
       }
       return token
     },
@@ -56,6 +58,7 @@ export const authOptions: NextAuthConfig = {
       if (session.user) {
         session.user.rol = token.rol as string
         session.user.egresadoId = token.egresadoId as string
+        session.user.mustChangePassword = token.mustChangePassword as boolean
       }
       return session
     }
