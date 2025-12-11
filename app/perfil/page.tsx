@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { ArrowLeft, Briefcase, Calendar } from 'lucide-react'
@@ -38,7 +39,15 @@ interface Egresado {
 export default function PerfilPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const egresadoId = searchParams.get('id')
+  const { data: session, status } = useSession()
+
+  // Usar ID de URL (para admin viendo perfil) o ID de sesión (para egresado viendo su propio perfil)
+  const egresadoIdFromUrl = searchParams.get('id')
+  const egresadoIdFromSession = session?.user?.egresadoId
+  const egresadoId = egresadoIdFromUrl || egresadoIdFromSession
+
+  const isOwnProfile = !egresadoIdFromUrl || egresadoIdFromUrl === egresadoIdFromSession
+  const isAdmin = session?.user?.rol === 'ADMIN'
 
   const [egresado, setEgresado] = useState<Egresado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -59,10 +68,13 @@ export default function PerfilPage() {
   })
 
   useEffect(() => {
+    if (status === 'loading') return
     if (egresadoId) {
       fetchEgresado()
+    } else {
+      setIsLoading(false)
     }
-  }, [egresadoId])
+  }, [egresadoId, status])
 
   const fetchEgresado = async () => {
     try {
@@ -104,7 +116,7 @@ export default function PerfilPage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -119,8 +131,21 @@ export default function PerfilPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          Egresado no encontrado
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
+          <p className="text-muted-foreground">
+            {!egresadoId
+              ? 'No se encontró información de egresado asociada a tu cuenta.'
+              : 'Egresado no encontrado'}
+          </p>
+          {/* Debug info */}
+          <p className="text-xs text-gray-400">
+            Session egresadoId: {egresadoIdFromSession || 'null'} | URL id: {egresadoIdFromUrl || 'null'}
+          </p>
+          {isAdmin && (
+            <Button onClick={() => router.push('/egresados')}>
+              Volver a lista de egresados
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -131,14 +156,22 @@ export default function PerfilPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
+        {/* Debug: mostrar info de sesión */}
+        <div className="mb-4 p-2 bg-gray-100 rounded text-xs text-gray-500">
+          Rol: {session?.user?.rol} | EgresadoId: {egresadoIdFromSession || 'null'} | isOwnProfile: {String(isOwnProfile)} | isAdmin: {String(isAdmin)}
+        </div>
+
+        {/* Solo mostrar botón volver si es admin viendo perfil de otro */}
+        {isAdmin && egresadoIdFromUrl && (
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+        )}
 
         <div className="grid gap-6 md:grid-cols-3">
           {/* INFORMACIÓN PERSONAL */}
@@ -193,7 +226,8 @@ export default function PerfilPage() {
 
           {/* INFORMACIÓN LABORAL */}
           <div className="md:col-span-2 space-y-6">
-            {/* FORMULARIO */}
+            {/* FORMULARIO - Solo visible para el egresado editando su propio perfil */}
+            {(isOwnProfile && !isAdmin) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -329,6 +363,7 @@ export default function PerfilPage() {
                 </form>
               </CardContent>
             </Card>
+            )}
 
             {/* HISTORIAL LABORAL */}
             <Card>

@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, LogOut, User, LayoutDashboard, Users, UserPlus } from 'lucide-react'
+import { GraduationCap, LogOut, User, LayoutDashboard, Users, UserPlus, Briefcase } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
 
@@ -12,23 +12,33 @@ export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
 
+  const isAdmin = session?.user?.rol === 'ADMIN'
+
   const handleLogout = async () => {
     await signOut({ redirect: false })
     router.push('/login')
   }
 
-  const navItems = [
+  // Menú diferenciado por rol
+  const adminNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/egresados', label: 'Egresados', icon: Users },
     { href: '/egresados/nuevo', label: 'Nuevo', icon: UserPlus },
   ]
+
+  const egresadoNavItems = [
+    { href: '/perfil', label: 'Mi Perfil', icon: User },
+    { href: '/perfil', label: 'Info Laboral', icon: Briefcase },
+  ]
+
+  const navItems = isAdmin ? adminNavItems : egresadoNavItems
 
   return (
     <nav className="border-b bg-white">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href={isAdmin ? "/dashboard" : "/perfil"} className="flex items-center gap-2">
               <div className="bg-primary p-2 rounded-lg">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
