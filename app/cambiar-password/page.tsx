@@ -29,7 +29,6 @@ type CambiarPasswordFormData = z.infer<typeof cambiarPasswordSchema>
 
 export default function CambiarPasswordPage() {
   const router = useRouter()
-  const { data: session, update } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPasswords, setShowPasswords] = useState({
@@ -63,15 +62,8 @@ export default function CambiarPasswordPage() {
         throw new Error(result.error || 'Error al cambiar contraseña')
       }
 
-      // Actualizar sesión para reflejar que ya no necesita cambiar contraseña
-      await update({ mustChangePassword: false })
-
-      // Redirigir según el rol
-      if (session?.user?.rol === 'ADMIN') {
-        router.push('/dashboard')
-      } else {
-        router.push('/perfil')
-      }
+      // Cerrar sesión y redirigir al login para que inicie con la nueva contraseña
+      await signOut({ callbackUrl: '/login?mensaje=password-cambiado' })
     } catch (error: any) {
       setError(error.message)
     } finally {

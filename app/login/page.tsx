@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { GraduationCap } from 'lucide-react'
@@ -14,8 +14,17 @@ import { loginSchema, type LoginFormData } from '@/lib/validations'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const mensaje = searchParams.get('mensaje')
+    if (mensaje === 'password-cambiado') {
+      setSuccessMessage('Contraseña cambiada exitosamente. Inicia sesión con tu nueva contraseña.')
+    }
+  }, [searchParams])
 
   const {
     register,
@@ -96,6 +105,12 @@ export default function LoginPage() {
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
+
+            {successMessage && (
+              <div className="bg-green-100 text-green-800 text-sm p-3 rounded-md">
+                {successMessage}
+              </div>
+            )}
 
             {error && (
               <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
