@@ -28,7 +28,6 @@ export function Navbar() {
 
   const egresadoNavItems = [
     { href: '/perfil', label: 'Mi Perfil', icon: User },
-    { href: '/perfil', label: 'Info Laboral', icon: Briefcase },
   ]
 
   const navItems = isAdmin ? adminNavItems : egresadoNavItems

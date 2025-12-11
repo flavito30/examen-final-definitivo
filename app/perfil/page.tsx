@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -36,7 +36,7 @@ interface Egresado {
   }>
 }
 
-export default function PerfilPage() {
+function PerfilContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
@@ -137,10 +137,6 @@ export default function PerfilPage() {
               ? 'No se encontró información de egresado asociada a tu cuenta.'
               : 'Egresado no encontrado'}
           </p>
-          {/* Debug info */}
-          <p className="text-xs text-gray-400">
-            Session egresadoId: {egresadoIdFromSession || 'null'} | URL id: {egresadoIdFromUrl || 'null'}
-          </p>
           {isAdmin && (
             <Button onClick={() => router.push('/egresados')}>
               Volver a lista de egresados
@@ -156,11 +152,6 @@ export default function PerfilPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Debug: mostrar info de sesión */}
-        <div className="mb-4 p-2 bg-gray-100 rounded text-xs text-gray-500">
-          Rol: {session?.user?.rol} | EgresadoId: {egresadoIdFromSession || 'null'} | isOwnProfile: {String(isOwnProfile)} | isAdmin: {String(isAdmin)}
-        </div>
-
         {/* Solo mostrar botón volver si es admin viendo perfil de otro */}
         {isAdmin && egresadoIdFromUrl && (
           <Button
@@ -226,8 +217,8 @@ export default function PerfilPage() {
 
           {/* INFORMACIÓN LABORAL */}
           <div className="md:col-span-2 space-y-6">
-            {/* FORMULARIO - Solo visible para el egresado editando su propio perfil */}
-            {(isOwnProfile && !isAdmin) && (
+            {/* FORMULARIO - Visible para: egresado en su propio perfil O admin viendo cualquier perfil */}
+            {(isOwnProfile || isAdmin) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -419,5 +410,17 @@ export default function PerfilPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        Cargando...
+      </div>
+    }>
+      <PerfilContent />
+    </Suspense>
   )
 }
