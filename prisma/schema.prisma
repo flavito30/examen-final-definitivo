@@ -1,0 +1,107 @@
+// Prisma Schema para Sistema de Gestión de Egresados
+// Configurado para SQLite (desarrollo local)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuario para autenticación
+// Nota: rol usa String en lugar de enum para compatibilidad con SQLite
+// Valores válidos: "ADMIN", "EGRESADO"
+model Usuario {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  password           String   // Hasheado con bcrypt
+  rol                String   @default("EGRESADO")
+  mustChangePassword Boolean  @default(false) // True para egresados nuevos
+  egresado           Egresado?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+// Modelo principal de Egresado
+model Egresado {
+  id            String    @id @default(cuid())
+  nombres       String
+  apellidos     String
+  dni           String    @unique
+  email         String    @unique
+  telefono      String?
+  linkedin      String?   // Campo agregado por cambio solicitado
+  carrera       String
+  anioEgreso    Int
+
+  // Relación con usuario
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId     String    @unique
+
+  // Relación con empleos
+  empleos       Empleo[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("egresados")
+  @@index([dni])
+  @@index([email])
+  @@index([carrera])
+  @@index([anioEgreso])
+}
+
+// Modelo de Empleo (Historial laboral)
+model Empleo {
+  id            String    @id @default(cuid())
+  empresa       String
+  cargo         String
+  sector        String
+  fechaInicio   DateTime
+  fechaFin      DateTime?
+  salario       Float?    // Opcional
+  actual        Boolean   @default(false)
+
+  // Relación con egresado
+  egresado      Egresado  @relation(fields: [egresadoId], references: [id], onDelete: Cascade)
+  egresadoId    String
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("empleos")
+  @@index([egresadoId])
+  @@index([actual])
+}
+
+// Modelo para Encuestas de Empleabilidad (Iteración futura)
+model Encuesta {
+  id              String    @id @default(cuid())
+  titulo          String
+  descripcion     String?
+  fechaInicio     DateTime
+  fechaFin        DateTime
+  activa          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("encuestas")
+}
+
+// Modelo para Eventos (Iteración futura)
+model Evento {
+  id              String    @id @default(cuid())
+  titulo          String
+  descripcion     String
+  fecha           DateTime
+  lugar           String
+  tipoEvento      String    // Webinar, Charla, Networking, etc.
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("eventos")
+}
