@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+export const runtime = 'nodejs'
+
 const cambiarPasswordSchema = z.object({
   passwordActual: z.string().min(1, 'Contraseña actual requerida'),
   passwordNueva: z.string()
